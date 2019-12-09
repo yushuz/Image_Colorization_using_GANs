@@ -1,7 +1,8 @@
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, sampler
 
 from models import Cifar10_GAN, U_Net32
 from dataset import FacadeDataset
+from utils import visual_result
 
 
 def train(num_epoch, batch_size, learning_rate, l1_weight):
@@ -10,9 +11,13 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
     train_loader = DataLoader(train_data, batch_size=batch_size)
     val_data = FacadeDataset(flag='train', data_range=(49000, 50000))
     val_loader = DataLoader(val_data, batch_size=batch_size)
+    visual_data = next(iter(DataLoader(val_data, batch_size=9,
+                                       sampler=sampler.SubsetRandomSampler(range(1000)))))
 
     GAN_cifar = Cifar10_GAN(learning_rate=learning_rate, l1_weight=l1_weight)
     Unet = U_Net32(learning_rate=learning_rate)
+
+    # visual_result(visual_data[0], visual_data[1], GAN_cifar.G_model, Unet.model, GAN_cifar.trained_epoch+1)
 
     assert GAN_cifar.trained_epoch + 1 < num_epoch
     start_epoch = 0
@@ -24,6 +29,8 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
         GAN_cifar.train_one_epoch(train_loader, val_loader, epoch)
         Unet.train_one_epoch(train_loader, val_loader, epoch)
 
+        visual_result(visual_data[0], visual_data[1], GAN_cifar.G_model, Unet.model, GAN_cifar.trained_epoch+1)
+
     GAN_cifar.plot_loss()
     Unet.plot_loss()
 
@@ -32,4 +39,4 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
 
 
 if __name__ == '__main__':
-    train(num_epoch=30, batch_size=64, learning_rate=1e-4, l1_weight=100)
+    train(num_epoch=33, batch_size=64, learning_rate=1e-4, l1_weight=100)
