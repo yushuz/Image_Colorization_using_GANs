@@ -5,15 +5,19 @@ import numpy as np
 
 datasets.CIFAR10('.', download=True)
 
-os.mkdir("cifar_image")
-os.mkdir("cifar_image/train")
-os.mkdir("cifar_image/test")
+if not os.path.exists("cifar_image"):
+    os.mkdir("cifar_image")
+    os.mkdir("cifar_image/train")
+    os.mkdir("cifar_image/test")
 
-os.mkdir("image256")
-os.mkdir("image256/train")
+if not os.path.exists("image256"):
+    os.mkdir("image256")
+    os.mkdir("image256/train")
 
-os.mkdir("loss_plot")
-os.mkdir("val")
+if not os.path.exists("loss_plot"):
+    os.mkdir("loss_plot")
+if not os.path.exists("val"):
+    os.mkdir("val")
 
 def unpickle(file):
     import pickle
