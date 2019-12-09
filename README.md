@@ -1,1 +1,2 @@
-# 442_project
+# 442 project
+Shunhao Wu, Yushu Zhang, Haiyan Hu
