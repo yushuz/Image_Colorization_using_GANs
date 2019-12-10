@@ -36,18 +36,18 @@ def unpickle(file):
 # X_test = test_batch['data']
 
 
-datasets.CIFAR100('.', download=True)
-X_train = unpickle("cifar-100-python/train")['data']
-X_test = unpickle("cifar-100-python/test")['data']
-
-for i in range(X_train.shape[0]):
-    img = np.transpose(X_train[i,:].reshape([3,32,32]), (1,2,0))
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-    cv2.imwrite('cifar_image/train/{:04d}.png'.format(i), img)
-    cv2.imwrite('cifar_image/train/{:04d}.jpg'.format(i), img)
-
-for i in range(X_test.shape[0]):
-    img_test = np.transpose(X_test[i,:].reshape([3,32,32]), (1,2,0))
-    img_test = cv2.cvtColor(img_test, cv2.COLOR_RGB2BGR)
-    cv2.imwrite('cifar_image/test/{:04d}.png'.format(i), img_test)
-    cv2.imwrite('cifar_image/test/{:04d}.jpg'.format(i), img_test)
+# datasets.CIFAR100('.', download=True)
+# X_train = unpickle("cifar-100-python/train")['data']
+# X_test = unpickle("cifar-100-python/test")['data']
+#
+# for i in range(X_train.shape[0]):
+#     img = np.transpose(X_train[i,:].reshape([3,32,32]), (1,2,0))
+#     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+#     cv2.imwrite('cifar_image/train/{:04d}.png'.format(i), img)
+#     cv2.imwrite('cifar_image/train/{:04d}.jpg'.format(i), img)
+#
+# for i in range(X_test.shape[0]):
+#     img_test = np.transpose(X_test[i,:].reshape([3,32,32]), (1,2,0))
+#     img_test = cv2.cvtColor(img_test, cv2.COLOR_RGB2BGR)
+#     cv2.imwrite('cifar_image/test/{:04d}.png'.format(i), img_test)
+#     cv2.imwrite('cifar_image/test/{:04d}.jpg'.format(i), img_test)

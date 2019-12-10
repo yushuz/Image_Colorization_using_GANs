@@ -47,10 +47,7 @@ class Cifar10_GAN():
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
         if epoch % 10 == 0:
-            self.learning_rate *= 0.95
-            self.G_optimizer = optim.Adam(self.G_model.parameters(), lr=self.learning_rate)
-            self.D_optimizer = optim.Adam(self.D_model.parameters(), lr=self.learning_rate)
-
+          self.l1_weight = self.l1_weight * 0.95
         start = time.time()
         lossesD, lossesD_real, lossesD_fake, lossesG, lossesG_GAN, \
         lossesG_L1, Dreals, Dfakes = [], [], [], [], [], [], [], []
@@ -59,15 +56,15 @@ class Cifar10_GAN():
         self.D_model.train()
 
         # for gray, color in tqdm(self.train_loader):
-        for gray, color in tqdm(train_loader):
+        for gray, img_ab in tqdm(train_loader):
             gray = Variable(gray.cuda())
-            color = Variable(color.cuda())
+            img_ab = Variable(img_ab.cuda())
 
             # train D with real image
             self.D_model.zero_grad()
-            label = torch.FloatTensor(color.size(0)).cuda()
+            label = torch.FloatTensor(img_ab.size(0)).cuda()
 
-            D_output = self.D_model(color)
+            D_output = self.D_model(img_ab)
             label_real = Variable(label.fill_(1))
             D_loss_real = self.criterion(torch.squeeze(D_output), label_real)
             D_loss_real.backward()
@@ -88,10 +85,10 @@ class Cifar10_GAN():
             self.G_model.zero_grad()
 
             fake_img = self.G_model(gray)
-            D_output = self.D_model(fake_img)
+            D_output = self.D_model(fake_img.detach())
             label_real = Variable(label.fill_(1))
             lossG_GAN = self.criterion(torch.squeeze(D_output), label_real)
-            lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), color.view(color.size(0), -1))
+            lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), img_ab.view(img_ab.size(0), -1))
 
             lossG = lossG_GAN + self.l1_weight * lossG_L1
             lossG.backward()
@@ -453,10 +450,7 @@ class GAN_256():
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
         if epoch % 10 == 0:
-            self.learning_rate *= 0.95
-            self.G_optimizer = optim.Adam(self.G_model.parameters(), lr=self.learning_rate)
-            self.D_optimizer = optim.Adam(self.D_model.parameters(), lr=self.learning_rate)
-
+          self.l1_weight = self.l1_weight * 0.95
         start = time.time()
         lossesD, lossesD_real, lossesD_fake, lossesG, lossesG_GAN, \
         lossesG_L1, Dreals, Dfakes = [], [], [], [], [], [], [], []
@@ -465,15 +459,15 @@ class GAN_256():
         self.D_model.train()
 
         # for gray, color in tqdm(self.train_loader):
-        for gray, color in tqdm(train_loader):
+        for gray, img_ab in tqdm(train_loader):
             gray = Variable(gray.cuda())
-            color = Variable(color.cuda())
+            img_ab = Variable(img_ab.cuda())
 
             # train D with real image
             self.D_model.zero_grad()
-            label = torch.FloatTensor(color.size(0)).cuda()
+            label = torch.FloatTensor(img_ab.size(0)).cuda()
 
-            D_output = self.D_model(color)
+            D_output = self.D_model(img_ab)
             label_real = Variable(label.fill_(1))
             D_loss_real = self.criterion(torch.squeeze(D_output), label_real)
             D_loss_real.backward()
@@ -494,10 +488,10 @@ class GAN_256():
             self.G_model.zero_grad()
 
             fake_img = self.G_model(gray)
-            D_output = self.D_model(fake_img)
+            D_output = self.D_model(fake_img.detach())
             label_real = Variable(label.fill_(1))
             lossG_GAN = self.criterion(torch.squeeze(D_output), label_real)
-            lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), color.view(color.size(0), -1))
+            lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), img_ab.view(img_ab.size(0), -1))
 
             lossG = lossG_GAN + self.l1_weight * lossG_L1
             lossG.backward()
