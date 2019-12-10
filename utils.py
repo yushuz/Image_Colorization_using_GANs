@@ -44,3 +44,26 @@ def visual_result(gray, reals, G_model, U_model, epoch):
     plt.tight_layout()
     plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
     plt.clf()
+
+
+def visual_result_singleModel(gray, reals, model, epoch):
+    fakes = model(Variable(gray.cuda()))
+    plt.figure(figsize=(25,10))
+    num_plot = 9
+    for i in range(num_plot):
+        fake = fakes[i].cpu().detach().numpy()
+        real = reals[i].cpu().numpy()
+
+        real = ((real + 1.0) * 128.0).astype('uint8')
+        fake = ((fake + 1.0) * 128.0).astype('uint8')
+
+        real = cv2.cvtColor(np.transpose(real, (1,2,0)), cv2.COLOR_LAB2RGB)
+        fake = cv2.cvtColor(np.transpose(fake, (1,2,0)), cv2.COLOR_LAB2RGB)
+
+        plt.subplot(3, num_plot / 3, i+1)
+        plt.imshow(np.hstack((real, fake)))
+        plt.axis('off')
+
+    plt.tight_layout()
+    plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
+    plt.clf()
