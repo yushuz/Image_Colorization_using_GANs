@@ -1,4 +1,5 @@
 import torch
+from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
@@ -18,25 +19,26 @@ def val_accuracy(fake, real):
     return acc_2, acc_5
 
 
-def visual_result(fake_batch, base_batch, real_batch, epoch):
-    fake_batch = fake_batch[:9,::]
+def visual_result(gray, reals, G_model, U_model, epoch):
+    fakes_G = G_model(Variable(gray.cuda()))
+    fakes_U = U_model(Variable(gray.cuda()))
     plt.figure(figsize=(25,10))
     num_plot = 9
     for i in range(num_plot):
-        real = real_batch[i].cpu().numpy()
-        pred = fake_batch[i].cpu().detach().numpy()
-        pred_2 = base_batch[i].cpu().detach().numpy()
+        fake_G = fakes_G[i].cpu().detach().numpy()
+        fake_U = fakes_U[i].cpu().detach().numpy()
+        real = reals[i].cpu().numpy()
 
         real = ((real + 1.0) * 128.0).astype('uint8')
-        pred = ((pred + 1.0) * 128.0).astype('uint8')
-        pred_2 = ((pred_2 + 1.0) * 128.0).astype('uint8')
+        fake_G = ((fake_G + 1.0) * 128.0).astype('uint8')
+        fake_U = ((fake_U + 1.0) * 128.0).astype('uint8')
 
         real = cv2.cvtColor(np.transpose(real, (1,2,0)), cv2.COLOR_LAB2RGB)
-        pred = cv2.cvtColor(np.transpose(pred, (1,2,0)), cv2.COLOR_LAB2RGB)
-        pred_2 = cv2.cvtColor(np.transpose(pred_2, (1, 2, 0)), cv2.COLOR_LAB2RGB)
+        fake_G = cv2.cvtColor(np.transpose(fake_G, (1,2,0)), cv2.COLOR_LAB2RGB)
+        fake_U = cv2.cvtColor(np.transpose(fake_U, (1, 2, 0)), cv2.COLOR_LAB2RGB)
 
         plt.subplot(3, num_plot / 3, i+1)
-        plt.imshow(np.hstack((real, pred, pred_2)))
+        plt.imshow(np.hstack((real, fake_G, fake_U)))
         plt.axis('off')
 
     plt.tight_layout()
