@@ -3,8 +3,6 @@ import os
 import cv2
 import numpy as np
 
-datasets.CIFAR10('.', download=True)
-
 if not os.path.exists("cifar_image"):
     os.mkdir("cifar_image")
     os.mkdir("cifar_image/train")
@@ -25,15 +23,22 @@ def unpickle(file):
         dict = pickle.load(fo, encoding="latin1")
     return dict
 
-batch1 = unpickle("cifar-10-batches-py/data_batch_1")
-batch2 = unpickle("cifar-10-batches-py/data_batch_2")
-batch3 = unpickle("cifar-10-batches-py/data_batch_3")
-batch4 = unpickle("cifar-10-batches-py/data_batch_4")
-batch5 = unpickle("cifar-10-batches-py/data_batch_5")
-test_batch = unpickle("cifar-10-batches-py/test_batch")
-X_train = np.vstack((batch1['data'], batch2['data'], batch3['data'],\
-                     batch4['data'], batch5['data']))
-X_test = test_batch['data']
+
+# datasets.CIFAR10('.', download=True)
+# batch1 = unpickle("cifar-10-batches-py/data_batch_1")
+# batch2 = unpickle("cifar-10-batches-py/data_batch_2")
+# batch3 = unpickle("cifar-10-batches-py/data_batch_3")
+# batch4 = unpickle("cifar-10-batches-py/data_batch_4")
+# batch5 = unpickle("cifar-10-batches-py/data_batch_5")
+# test_batch = unpickle("cifar-10-batches-py/test_batch")
+# X_train = np.vstack((batch1['data'], batch2['data'], batch3['data'],\
+#                      batch4['data'], batch5['data']))
+# X_test = test_batch['data']
+
+
+datasets.CIFAR100('.', download=True)
+X_train = unpickle("cifar-100-python/train")['data']
+X_test = unpickle("cifar-100-python/test")['data']
 
 for i in range(X_train.shape[0]):
     img = np.transpose(X_train[i,:].reshape([3,32,32]), (1,2,0))

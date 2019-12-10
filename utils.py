@@ -19,9 +19,14 @@ def val_accuracy(fake, real):
     return acc_2, acc_5
 
 
-def visual_result(gray, reals, G_model, U_model, epoch):
+def visual_result(gray, reals, G_model, U_model, epoch=None, mode='val'):
     fakes_G = G_model(Variable(gray.cuda()))
     fakes_U = U_model(Variable(gray.cuda()))
+
+    fakes_G = torch.cat([Variable(gray.cuda()), fakes_G], dim=1)
+    fakes_U = torch.cat([Variable(gray.cuda()), fakes_U], dim=1)
+    reals = torch.cat([Variable(gray.cuda()), Variable(reals.cuda())], dim=1)
+
     plt.figure(figsize=(25,10))
     num_plot = 9
     for i in range(num_plot):
@@ -29,9 +34,9 @@ def visual_result(gray, reals, G_model, U_model, epoch):
         fake_U = fakes_U[i].cpu().detach().numpy()
         real = reals[i].cpu().numpy()
 
-        real = ((real + 1.0) * 128.0).astype('uint8')
-        fake_G = ((fake_G + 1.0) * 128.0).astype('uint8')
-        fake_U = ((fake_U + 1.0) * 128.0).astype('uint8')
+        real = ((real + 0.0) * 128.0).astype('uint8')
+        fake_G = ((fake_G + 0.0) * 128.0).astype('uint8')
+        fake_U = ((fake_U + 0.0) * 128.0).astype('uint8')
 
         real = cv2.cvtColor(np.transpose(real, (1,2,0)), cv2.COLOR_LAB2RGB)
         fake_G = cv2.cvtColor(np.transpose(fake_G, (1,2,0)), cv2.COLOR_LAB2RGB)
@@ -42,7 +47,7 @@ def visual_result(gray, reals, G_model, U_model, epoch):
         plt.axis('off')
 
     plt.tight_layout()
-    plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
+    plt.savefig('./val/' + 'epoch%d_%s.png' % (epoch, mode))
     plt.clf()
 
 

@@ -10,8 +10,9 @@ from utils import *
 
 
 class Cifar10_GAN():
-    def __init__(self, learning_rate, l1_weight, save_path="trained_model.pth.tar"):
+    def __init__(self, learning_rate=1e-4, l1_weight=5, save_path="trained_model.pth.tar"):
         self.trained_epoch = 0
+        self.learning_rate = learning_rate
 
         try:
             self.G_model = Generator_cifar().cuda()
@@ -45,6 +46,11 @@ class Cifar10_GAN():
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
+        if epoch % 10 == 0:
+            self.learning_rate *= 0.95
+            self.G_optimizer = optim.Adam(self.G_model.parameters(), lr=self.learning_rate)
+            self.D_optimizer = optim.Adam(self.D_model.parameters(), lr=self.learning_rate)
+
         start = time.time()
         lossesD, lossesD_real, lossesD_fake, lossesG, lossesG_GAN, \
         lossesG_L1, Dreals, Dfakes = [], [], [], [], [], [], [], []
@@ -171,18 +177,51 @@ class Cifar10_GAN():
 
             return lossesD/cnt, lossesG/cnt, acc_2, acc_5
 
-    def test(self):
-        pass
-        # self.test_loss[0], self.test_loss[1], self.test_loss[2] = \
-        #     validate_test(
-        #         self.test_loader,
-        #         self.G_model,
-        #         self.D_model,
-        #         self.U_net,
-        #         self.criterion,
-        #         self.L1)
-        #
-        # self.test_acc2, self.test_acc5 = check_accuracy(self.G_model, self.D_model, self.test_loader)
+    def test(self, test_loader):
+        lossesD, lossesG, cnt = 0.0, 0.0, 0
+        acc_2_list, acc_5_list = [], []
+
+        with torch.no_grad():
+            self.G_model.eval()
+            self.D_model.eval()
+
+            for gray, color in tqdm(test_loader):
+                gray = Variable(gray.cuda())
+                color = Variable(color.cuda())
+
+                # for D_model
+                label = torch.FloatTensor(color.size(0)).cuda()
+                label_real = Variable(label.fill_(1))
+                lossD_real = self.criterion(torch.squeeze(self.D_model(color)), label_real)
+
+                fake_img = self.G_model(gray)
+                label_fake = Variable(label.fill_(0))
+                pred_D_fake = self.D_model(fake_img.detach())
+                lossD_fake = self.criterion(torch.squeeze(pred_D_fake), label_fake)
+
+                lossD = lossD_real.item() + lossD_fake.item()
+
+                # for G_model
+                lossG_GAN = self.criterion(torch.squeeze(pred_D_fake), label_real)
+                lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), color.view(color.size(0), -1))
+                lossG = lossG_GAN.item() + 100 * lossG_L1.item()
+
+                lossesD += lossD
+                lossesG += lossG
+                cnt += 1
+
+                acc_2, acc_5 = val_accuracy(fake_img, color)
+                acc_2_list.append(acc_2)
+                acc_5_list.append(acc_5)
+
+            print('loss_D: %.3f loss_G: %.3f' % (lossesD / cnt, lossesG / cnt))
+
+            acc_2 = torch.stack(acc_2_list).mean().item()
+            acc_5 = torch.stack(acc_5_list).mean().item()
+            print('GAN: 2%% test Accuracy = %.4f' % acc_2)
+            print('GAN: 5%% test Accuracy = %.4f' % acc_5)
+
+            return lossesD / cnt, lossesG / cnt, acc_2, acc_5
 
     def save(self):
         torch.save({'G_state_dict': self.G_model.state_dict(),
@@ -223,8 +262,9 @@ class Cifar10_GAN():
 
 
 class U_Net32():
-    def __init__(self, learning_rate, save_path="trained_UNet_model.pth.tar"):
+    def __init__(self, learning_rate=1e-4, save_path="trained_UNet_model.pth.tar"):
         self.trained_epoch = 0
+        self.learning_rate = learning_rate
 
         try:
             self.model = U_Net_network_cifar().cuda()
@@ -251,6 +291,10 @@ class U_Net32():
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
+        if epoch % 10 == 0:
+            self.learning_rate *= 0.95
+            self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
         losses, cnt = 0.0, 0
 
         self.model.train()
@@ -307,18 +351,34 @@ class U_Net32():
 
             return losses/cnt, acc_2, acc_5
 
-    def test(self):
-        pass
-        # self.test_loss[0], self.test_loss[1], self.test_loss[2] = \
-        #     validate_test(
-        #         self.test_loader,
-        #         self.G_model,
-        #         self.D_model,
-        #         self.U_net,
-        #         self.criterion,
-        #         self.L1)
-        #
-        # self.test_acc2, self.test_acc5 = check_accuracy(self.G_model, self.D_model, self.test_loader)
+    def test(self, test_loader):
+        losses, cnt = 0.0, 0
+        acc_2_list, acc_5_list = [], []
+
+        with torch.no_grad():
+            self.model.eval()
+
+            for gray, color in tqdm(test_loader):
+                gray = Variable(gray.cuda())
+                color = Variable(color.cuda())
+
+                output = self.model(gray)
+                loss = self.criterion(output.view(output.size(0), -1), color.view(color.size(0), -1))
+                losses += loss.item()
+                cnt += 1
+
+                acc_2, acc_5 = val_accuracy(output, color)
+                acc_2_list.append(acc_2)
+                acc_5_list.append(acc_5)
+
+            print('U-Net test loss: %.3f' % (losses / cnt))
+
+            acc_2 = torch.stack(acc_2_list).mean().item()
+            acc_5 = torch.stack(acc_5_list).mean().item()
+            print('U-Net: 2%% test Accuracy = %.4f' % acc_2)
+            print('U-Net: 5%% test Accuracy = %.4f' % acc_5)
+
+            return losses / cnt, acc_2, acc_5
 
     def save(self):
         torch.save({'state_dict': self.model.state_dict(),
@@ -354,8 +414,9 @@ class U_Net32():
 
 
 class GAN_256():
-    def __init__(self, learning_rate, l1_weight, save_path="trained_256_model.pth.tar"):
+    def __init__(self, learning_rate=1e-4, l1_weight=5, save_path="trained_256_model.pth.tar"):
         self.trained_epoch = 0
+        self.learning_rate = learning_rate
 
         try:
             self.G_model = Generator_256().cuda()
@@ -389,6 +450,11 @@ class GAN_256():
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
+        if epoch % 10 == 0:
+            self.learning_rate *= 0.95
+            self.G_optimizer = optim.Adam(self.G_model.parameters(), lr=self.learning_rate)
+            self.D_optimizer = optim.Adam(self.D_model.parameters(), lr=self.learning_rate)
+
         start = time.time()
         lossesD, lossesD_real, lossesD_fake, lossesG, lossesG_GAN, \
         lossesG_L1, Dreals, Dfakes = [], [], [], [], [], [], [], []
@@ -515,18 +581,51 @@ class GAN_256():
 
             return lossesD/cnt, lossesG/cnt, acc_2, acc_5
 
-    def test(self):
-        pass
-        # self.test_loss[0], self.test_loss[1], self.test_loss[2] = \
-        #     validate_test(
-        #         self.test_loader,
-        #         self.G_model,
-        #         self.D_model,
-        #         self.U_net,
-        #         self.criterion,
-        #         self.L1)
-        #
-        # self.test_acc2, self.test_acc5 = check_accuracy(self.G_model, self.D_model, self.test_loader)
+    def test(self, test_loader):
+        lossesD, lossesG, cnt = 0.0, 0.0, 0
+        acc_2_list, acc_5_list = [], []
+
+        with torch.no_grad():
+            self.G_model.eval()
+            self.D_model.eval()
+
+            for gray, color in tqdm(test_loader):
+                gray = Variable(gray.cuda())
+                color = Variable(color.cuda())
+
+                # for D_model
+                label = torch.FloatTensor(color.size(0)).cuda()
+                label_real = Variable(label.fill_(1))
+                lossD_real = self.criterion(torch.squeeze(self.D_model(color)), label_real)
+
+                fake_img = self.G_model(gray)
+                label_fake = Variable(label.fill_(0))
+                pred_D_fake = self.D_model(fake_img.detach())
+                lossD_fake = self.criterion(torch.squeeze(pred_D_fake), label_fake)
+
+                lossD = lossD_real.item() + lossD_fake.item()
+
+                # for G_model
+                lossG_GAN = self.criterion(torch.squeeze(pred_D_fake), label_real)
+                lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), color.view(color.size(0), -1))
+                lossG = lossG_GAN.item() + 100 * lossG_L1.item()
+
+                lossesD += lossD
+                lossesG += lossG
+                cnt += 1
+
+                acc_2, acc_5 = val_accuracy(fake_img, color)
+                acc_2_list.append(acc_2)
+                acc_5_list.append(acc_5)
+
+            print('loss_D: %.3f loss_G: %.3f' % (lossesD / cnt, lossesG / cnt))
+
+            acc_2 = torch.stack(acc_2_list).mean().item()
+            acc_5 = torch.stack(acc_5_list).mean().item()
+            print('GAN: 2%% test Accuracy = %.4f' % acc_2)
+            print('GAN: 5%% test Accuracy = %.4f' % acc_5)
+
+            return lossesD / cnt, lossesG / cnt, acc_2, acc_5
 
     def save(self):
         torch.save({'G_state_dict': self.G_model.state_dict(),
@@ -567,8 +666,9 @@ class GAN_256():
 
 
 class Unet_256():
-    def __init__(self, learning_rate, save_path="trained_256_UNet_model.pth.tar"):
+    def __init__(self, learning_rate=1e-4, save_path="trained_256_UNet_model.pth.tar"):
         self.trained_epoch = 0
+        self.learning_rate = learning_rate
 
         try:
             self.model = U_Net_network_256().cuda()
@@ -595,6 +695,10 @@ class Unet_256():
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
+        if epoch % 10 == 0:
+            self.learning_rate *= 0.95
+            self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+
         losses, cnt = 0.0, 0
 
         self.model.train()
@@ -651,18 +755,34 @@ class Unet_256():
 
             return losses/cnt, acc_2, acc_5
 
-    def test(self):
-        pass
-        # self.test_loss[0], self.test_loss[1], self.test_loss[2] = \
-        #     validate_test(
-        #         self.test_loader,
-        #         self.G_model,
-        #         self.D_model,
-        #         self.U_net,
-        #         self.criterion,
-        #         self.L1)
-        #
-        # self.test_acc2, self.test_acc5 = check_accuracy(self.G_model, self.D_model, self.test_loader)
+    def test(self, test_loader):
+        losses, cnt = 0.0, 0
+        acc_2_list, acc_5_list = [], []
+
+        with torch.no_grad():
+            self.model.eval()
+
+            for gray, color in tqdm(test_loader):
+                gray = Variable(gray.cuda())
+                color = Variable(color.cuda())
+
+                output = self.model(gray)
+                loss = self.criterion(output.view(output.size(0), -1), color.view(color.size(0), -1))
+                losses += loss.item()
+                cnt += 1
+
+                acc_2, acc_5 = val_accuracy(output, color)
+                acc_2_list.append(acc_2)
+                acc_5_list.append(acc_5)
+
+            print('U-Net test loss: %.3f' % (losses / cnt))
+
+            acc_2 = torch.stack(acc_2_list).mean().item()
+            acc_5 = torch.stack(acc_5_list).mean().item()
+            print('U-Net: 2%% test Accuracy = %.4f' % acc_2)
+            print('U-Net: 5%% test Accuracy = %.4f' % acc_5)
+
+            return losses / cnt, acc_2, acc_5
 
     def save(self):
         torch.save({'state_dict': self.model.state_dict(),

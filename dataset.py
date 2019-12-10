@@ -15,10 +15,11 @@ class FacadeDataset(Dataset):
             img = Image.open(os.path.join(dataDir,flag,'%04d.jpg' % i))
 
             img = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2LAB)
-            img = img.astype('float') / 128.0 - 1.0
+            img = img.astype('float') / 128.0
 
             img = np.transpose(img, [2,0,1])
             img_L = img[0,::].reshape([1, img.shape[1], img.shape[2]])
+            img = img[1:, ::]
 
             self.dataset.append((img_L, img))
         print("load dataset done")
@@ -40,10 +41,11 @@ class FacadeDataset_256(Dataset):
             img = Image.open(image_names[i])
 
             img = cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2LAB)
-            img = img.astype('float') / 128.0 - 1.0
+            img = img.astype('float') / 128.0
 
             img = np.transpose(img, [2,0,1])
             img_L = img[0,::].reshape([1, img.shape[1], img.shape[2]])
+            img = img[1:, ::]
 
             self.dataset.append((img_L, img))
         print("load dataset done")

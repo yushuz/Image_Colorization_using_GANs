@@ -38,7 +38,7 @@ class Generator_cifar(nn.Module):
         self.traver9 = nn.ConvTranspose2d(256, 64, kernel_size=4, stride=2, padding=1)
         self.bn9 = nn.BatchNorm2d(64)
 
-        self.traver10 = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
+        self.traver10 = nn.Conv2d(128, 2, kernel_size=1, stride=1, padding=0)
 
         self.drop = nn.Dropout(0.5)
 
@@ -49,36 +49,6 @@ class Generator_cifar(nn.Module):
             if isinstance(m, nn.ConvTranspose2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
-
-        # nn.init.kaiming_normal_(self.conv1.weight)
-        # nn.init.zeros_(self.conv1.bias)
-        #
-        # nn.init.kaiming_normal_(self.conv2.weight)
-        # nn.init.zeros_(self.conv2.bias)
-        #
-        # nn.init.kaiming_normal_(self.conv3.weight)
-        # nn.init.zeros_(self.conv3.bias)
-        #
-        # nn.init.kaiming_normal_(self.conv4.weight)
-        # nn.init.zeros_(self.conv4.bias)
-        #
-        # nn.init.kaiming_normal_(self.conv5.weight)
-        # nn.init.zeros_(self.conv5.bias)
-        #
-        # nn.init.kaiming_normal_(self.traver6.weight)
-        # nn.init.zeros_(self.traver6.bias)
-        #
-        # nn.init.kaiming_normal_(self.traver7.weight)
-        # nn.init.zeros_(self.traver7.bias)
-        #
-        # nn.init.kaiming_normal_(self.traver8.weight)
-        # nn.init.zeros_(self.traver8.bias)
-        #
-        # nn.init.kaiming_normal_(self.traver9.weight)
-        # nn.init.zeros_(self.traver9.bias)
-        #
-        # nn.init.kaiming_normal_(self.traver10.weight)
-        # nn.init.zeros_(self.traver10.bias)
 
     def forward(self, input):
         x = self.conv1(input)
@@ -128,7 +98,7 @@ class Generator_cifar(nn.Module):
         x = torch.cat((x, feature1), dim=1)
 
         x = self.traver10(x)
-        x = torch.tanh(x)
+        x = self.relu(x)
 
         return x
 
@@ -138,7 +108,7 @@ class Discriminator_cifar(nn.Module):
         super().__init__()
 
         # networks layers here
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(2, 64, kernel_size=4, stride=2, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
 
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -217,7 +187,7 @@ class U_Net_network_cifar(nn.Module):
         self.traver9 = nn.ConvTranspose2d(256, 64, kernel_size=4, stride=2, padding=1)
         self.bn9 = nn.BatchNorm2d(64)
 
-        self.traver10 = nn.Conv2d(128, 3, kernel_size=1, stride=1, padding=0)
+        self.traver10 = nn.Conv2d(128, 2, kernel_size=1, stride=1, padding=0)
 
         self.drop = nn.Dropout(0.5)
 
@@ -277,7 +247,7 @@ class U_Net_network_cifar(nn.Module):
         x = torch.cat((x, feature1), dim=1)
 
         x = self.traver10(x)
-        x = torch.tanh(x)
+        x = self.relu(x)
 
         return x
 
@@ -351,8 +321,7 @@ class Generator_256(nn.Module):
         self.bn15 = nn.BatchNorm2d(64)
 
         # [batch, 256, 256, 64] => [batch, 256, 256, 3]
-        self.traver16 = nn.ConvTranspose2d(128, 3, kernel_size=1, stride=1, padding=0)
-        self.bn16 = nn.BatchNorm2d(3)
+        self.traver16 = nn.ConvTranspose2d(128, 2, kernel_size=1, stride=1, padding=0)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -439,8 +408,6 @@ class Generator_256(nn.Module):
 
         x = self.traver16(x)
         x = self.bn16(x)
-        x = self.relu(x)
-        x = torch.tanh(x)
 
         return x
 
@@ -450,7 +417,7 @@ class Discriminator_256(nn.Module):
         super().__init__()
 
         # networks layers here
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(2, 64, kernel_size=4, stride=2, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
 
         self.leakyrelu = nn.LeakyReLU(0.1)
@@ -564,8 +531,7 @@ class U_Net_network_256(nn.Module):
         self.bn15 = nn.BatchNorm2d(64)
 
         # [batch, 256, 256, 64] => [batch, 256, 256, 3]
-        self.traver16 = nn.ConvTranspose2d(128, 3, kernel_size=1, stride=1, padding=0)
-        self.bn16 = nn.BatchNorm2d(3)
+        self.traver16 = nn.ConvTranspose2d(128, 2, kernel_size=1, stride=1, padding=0)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -652,7 +618,5 @@ class U_Net_network_256(nn.Module):
 
         x = self.traver16(x)
         x = self.bn16(x)
-        x = self.relu(x)
-        x = torch.tanh(x)
 
         return x
