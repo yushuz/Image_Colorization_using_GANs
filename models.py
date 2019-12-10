@@ -87,7 +87,9 @@ class Cifar10_GAN():
             # train G
             self.G_model.zero_grad()
 
+            fake_img = self.G_model(gray)
             D_output = self.D_model(fake_img)
+            label_real = Variable(label.fill_(1))
             lossG_GAN = self.criterion(torch.squeeze(D_output), label_real)
             lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), color.view(color.size(0), -1))
 
@@ -491,7 +493,9 @@ class GAN_256():
             # train G
             self.G_model.zero_grad()
 
+            fake_img = self.G_model(gray)
             D_output = self.D_model(fake_img)
+            label_real = Variable(label.fill_(1))
             lossG_GAN = self.criterion(torch.squeeze(D_output), label_real)
             lossG_L1 = self.L1(fake_img.view(fake_img.size(0), -1), color.view(color.size(0), -1))
 

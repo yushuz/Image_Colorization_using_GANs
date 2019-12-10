@@ -5,6 +5,8 @@ from torch.utils.data.dataset import Dataset
 from PIL import Image
 import cv2
 import glob
+import matplotlib.pyplot as plt
+
 
 class FacadeDataset(Dataset):
     def __init__(self, flag, dataDir='./cifar_image/', data_range=(0, 8)):

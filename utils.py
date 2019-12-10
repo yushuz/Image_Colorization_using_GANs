@@ -47,7 +47,10 @@ def visual_result(gray, reals, G_model, U_model, epoch=None, mode='val'):
         plt.axis('off')
 
     plt.tight_layout()
-    plt.savefig('./val/' + 'epoch%d_%s.png' % (epoch, mode))
+    if mode == 'val':
+        plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
+    else:
+        plt.savefig('./val/test.png')
     plt.clf()
 
 
