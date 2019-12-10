@@ -39,4 +39,4 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
 
 
 if __name__ == '__main__':
-    train(num_epoch=33, batch_size=64, learning_rate=1e-4, l1_weight=100)
+    train(num_epoch=37, batch_size=64, learning_rate=1e-4, l1_weight=100)

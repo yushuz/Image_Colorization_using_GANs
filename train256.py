@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 
 from models import GAN_256, Unet_256
 from dataset import FacadeDataset_256
+from utils import visual_result
 
 
 def train(num_epoch, batch_size, learning_rate, l1_weight):
@@ -10,6 +11,7 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
     train_loader = DataLoader(train_data, batch_size=batch_size)
     val_data = FacadeDataset_256(flag='train', data_range=(1500, 1706))
     val_loader = DataLoader(val_data, batch_size=batch_size)
+    visual_data = next(iter(DataLoader(val_data, batch_size=9)))
 
     GAN_cifar = GAN_256(learning_rate=learning_rate, l1_weight=l1_weight)
     Unet = Unet_256(learning_rate=learning_rate)
@@ -23,6 +25,8 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
         print('----------------------------- epoch {:d} -----------------------------'.format(epoch + 1))
         GAN_cifar.train_one_epoch(train_loader, val_loader, epoch)
         Unet.train_one_epoch(train_loader, val_loader, epoch)
+
+        visual_result(visual_data[0], visual_data[1], GAN_cifar.G_model, Unet.model, GAN_cifar.trained_epoch+1)
 
     GAN_cifar.plot_loss()
     Unet.plot_loss()
