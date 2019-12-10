@@ -407,7 +407,7 @@ class Generator_256(nn.Module):
         x = torch.cat([x, feature1], dim=1)
 
         x = self.traver16(x)
-        x = self.bn16(x)
+        x = self.relu(x)
 
         return x
 
@@ -617,6 +617,6 @@ class U_Net_network_256(nn.Module):
         x = torch.cat([x, feature1], dim=1)
 
         x = self.traver16(x)
-        x = self.bn16(x)
+        x = self.relu(x)
 
         return x
