@@ -7,9 +7,9 @@ from utils import visual_result
 
 def train(num_epoch, batch_size, learning_rate, l1_weight):
 
-    train_data = FacadeDataset_256(flag='train', data_range=(0, 500))
+    train_data = FacadeDataset_256(flag='train', data_range=(0, 600))
     train_loader = DataLoader(train_data, batch_size=batch_size)
-    val_data = FacadeDataset_256(flag='train', data_range=(500, 600))
+    val_data = FacadeDataset_256(flag='train', data_range=(600, 700))
     val_loader = DataLoader(val_data, batch_size=batch_size)
     visual_data = next(iter(DataLoader(val_data, batch_size=9)))
 
@@ -36,4 +36,4 @@ def train(num_epoch, batch_size, learning_rate, l1_weight):
 
 
 if __name__ == '__main__':
-    train(num_epoch=20, batch_size=16, learning_rate=1e-4, l1_weight=100)
+    train(num_epoch=20, batch_size=16, learning_rate=1e-4, l1_weight=5)
