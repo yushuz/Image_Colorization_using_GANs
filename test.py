@@ -7,11 +7,11 @@ from utils import visual_result
 
 def test(batch_size, test_range, size=32, only_visual=False):
     if size == 32:
-        test_date = FacadeDataset(flag='test', data_range=(0, test_range))
+        test_date = FacadeDataset(flag='train', data_range=(0, test_range))
         GAN_model = Cifar10_GAN()
         Unet = U_Net32()
     else:
-        test_date = FacadeDataset_256(flag='test', data_range=(test_range))
+        test_date = FacadeDataset_256(flag='train', data_range=(0, test_range))
         GAN_model = GAN_256()
         Unet = Unet_256()
 
