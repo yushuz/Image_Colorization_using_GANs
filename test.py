@@ -26,4 +26,4 @@ def test(batch_size, test_range, size=32, only_visual=False):
 
 
 if __name__ == '__main__':
-    test(batch_size=64, test_range=1000, size=32, only_visual=True)
+    test(batch_size=64, test_range=300, size=256, only_visual=True)
