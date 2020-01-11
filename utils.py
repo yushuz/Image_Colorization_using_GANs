@@ -47,6 +47,7 @@ def visual_result(gray, reals, G_model, U_model, epoch=None, mode='val'):
         plt.axis('off')
 
     plt.tight_layout()
+
     if mode == 'val':
         plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
     else:
@@ -74,4 +75,43 @@ def visual_result_singleModel(gray, reals, model, epoch):
 
     plt.tight_layout()
     plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
+    plt.clf()
+
+
+def visual_result_four(gray, reals, G_model, U_model, epoch=None, mode='val'):
+    fakes_G = G_model(Variable(gray.cuda()))
+    fakes_U = U_model(Variable(gray.cuda()))
+
+    fakes_G = torch.cat([Variable(gray.cuda()), fakes_G], dim=1)
+    fakes_U = torch.cat([Variable(gray.cuda()), fakes_U], dim=1)
+    reals = torch.cat([Variable(gray.cuda()), Variable(reals.cuda())], dim=1)
+
+    plt.figure(figsize=(25,10))
+    num_plot = 8
+    for i in range(num_plot):
+        gray_ = gray[i].cpu().detach().numpy()
+        fake_G = fakes_G[i].cpu().detach().numpy()
+        fake_U = fakes_U[i].cpu().detach().numpy()
+        real = reals[i].cpu().numpy()
+
+        real = ((real + 0.0) * 128.0).astype('uint8')
+        fake_G = ((fake_G + 0.0) * 128.0).astype('uint8')
+        fake_U = ((fake_U + 0.0) * 128.0).astype('uint8')
+        gray_ = ((gray_ + 0.0) * 128.0).astype('uint8')
+
+        gray_ = np.transpose(np.repeat(gray_, 3, axis=0), (1,2,0))
+        real = cv2.cvtColor(np.transpose(real, (1,2,0)), cv2.COLOR_LAB2RGB)
+        fake_G = cv2.cvtColor(np.transpose(fake_G, (1,2,0)), cv2.COLOR_LAB2RGB)
+        fake_U = cv2.cvtColor(np.transpose(fake_U, (1, 2, 0)), cv2.COLOR_LAB2RGB)
+
+        plt.subplot(4, num_plot / 4, i+1)
+        plt.imshow(np.hstack((gray_, real, fake_G, fake_U)))
+        plt.axis('off')
+
+    plt.tight_layout()
+
+    if mode == 'val':
+        plt.savefig('./val/' + 'epoch%d_val.png' % epoch)
+    else:
+        plt.savefig('./val/test.png')
     plt.clf()

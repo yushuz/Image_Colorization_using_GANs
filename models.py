@@ -13,6 +13,8 @@ class Cifar10_GAN():
     def __init__(self, learning_rate=1e-4, l1_weight=5, save_path="trained_model.pth.tar"):
         self.trained_epoch = 0
         self.learning_rate = learning_rate
+        self.best_acc2 = 0.0
+        self.best_acc5 = 0.0
 
         try:
             self.G_model = Generator_cifar().cuda()
@@ -20,7 +22,7 @@ class Cifar10_GAN():
         except TypeError:
             print("cuda is not available!")
 
-        self.G_optimizer = optim.Adam(self.G_model.parameters(), lr=learning_rate)
+        self.G_optimizer = optim.Adam(self.G_model.parameters(), lr=learning_rate*10)
         self.D_optimizer = optim.Adam(self.D_model.parameters(), lr=learning_rate)
 
         self.criterion = nn.BCELoss(reduction='mean')
@@ -43,11 +45,13 @@ class Cifar10_GAN():
             self.trained_epoch = checkpoint['trained_epoch']
             self.loss_history = checkpoint['loss_history']
             self.acc_history = checkpoint['acc_history']
+            self.best_acc2 = checkpoint['best_acc2']
+            self.best_acc5 = checkpoint['best_acc5']
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
-        if epoch % 10 == 0:
-          self.l1_weight = self.l1_weight * 0.95
+        # if epoch % 10 == 0:
+        #   self.l1_weight = self.l1_weight * 0.95
         start = time.time()
         lossesD, lossesD_real, lossesD_fake, lossesG, lossesG_GAN, \
         lossesG_L1, Dreals, Dfakes = [], [], [], [], [], [], [], []
@@ -118,6 +122,10 @@ class Cifar10_GAN():
               (lossD, D_loss_real, D_loss_fake, lossG, lossG_GAN, lossG_L1, Dreal, Dfake, end-start))
 
         lossD_val, lossG_val, acc_2, acc_5 = self.validate(val_loader)
+        if acc_2 > self.best_acc2 and acc_5 > self.best_acc5:
+            self.best_acc2 = acc_2
+            self.best_acc5 = acc_5
+            self.save(path="trained_model_best.pth.tar")
 
         # update history
         loss_all = [lossD, D_loss_real, D_loss_fake, lossG, lossG_GAN, lossG_L1, lossD_val,
@@ -222,14 +230,16 @@ class Cifar10_GAN():
 
             return lossesD / cnt, lossesG / cnt, acc_2, acc_5
 
-    def save(self):
+    def save(self, path="trained_model.pth.tar"):
         torch.save({'G_state_dict': self.G_model.state_dict(),
                     'D_state_dict': self.D_model.state_dict(),
                     'G_optimizer_state_dict': self.G_optimizer.state_dict(),
                     'D_optimizer_state_dict': self.D_optimizer.state_dict(),
                     'loss_history': self.loss_history,
                     'acc_history': self.acc_history,
-                    'trained_epoch': self.trained_epoch}, self.save_path)
+                    'best_acc2': self.best_acc2,
+                    'best_acc5': self.best_acc5,
+                    'trained_epoch': self.trained_epoch}, path)
 
     def plot_loss(self):
         loss_name = ['lossD_train', 'lossD_fake', 'lossD_real', 'lossG_train', 'lossG_GAN',
@@ -264,6 +274,8 @@ class U_Net32():
     def __init__(self, learning_rate=1e-4, save_path="trained_UNet_model.pth.tar"):
         self.trained_epoch = 0
         self.learning_rate = learning_rate
+        self.best_acc2 = 0.0
+        self.best_acc5 = 0.0
 
         try:
             self.model = U_Net_network_cifar().cuda()
@@ -287,12 +299,14 @@ class U_Net32():
             self.loss_train_history = checkpoint['loss_train_history']
             self.loss_val_history = checkpoint['loss_val_history']
             self.acc_history = checkpoint['acc_history']
+            self.best_acc2 = checkpoint['best_acc2']
+            self.best_acc5 = checkpoint['best_acc5']
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
-        if epoch % 10 == 0:
-            self.learning_rate *= 0.95
-            self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        # if epoch % 10 == 0:
+        #     self.learning_rate *= 0.95
+        #     self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
         losses, cnt = 0.0, 0
 
@@ -314,6 +328,10 @@ class U_Net32():
         print('U-Net training loss: %.3f ' % (losses/cnt))
 
         loss_val, acc_2, acc_5 = self.validate(val_loader)
+        if acc_2 > self.best_acc2 and acc_5 > self.best_acc5:
+            self.best_acc2 = acc_2
+            self.best_acc5 = acc_5
+            self.save(path="trained_UNet_model_best.pth.tar")
 
         # update history
         self.loss_train_history.append(losses/cnt)
@@ -379,13 +397,15 @@ class U_Net32():
 
             return losses / cnt, acc_2, acc_5
 
-    def save(self):
+    def save(self, path="trained_UNet_model.pth.tar"):
         torch.save({'state_dict': self.model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
                     'loss_train_history': self.loss_train_history,
                     'loss_val_history': self.loss_val_history,
                     'acc_history': self.acc_history,
-                    'trained_epoch': self.trained_epoch}, self.save_path)
+                    'best_acc2': self.best_acc2,
+                    'best_acc5': self.best_acc5,
+                    'trained_epoch': self.trained_epoch}, path)
 
     def plot_loss(self):
         if not os.path.exists("loss_plot/"):
@@ -416,6 +436,8 @@ class GAN_256():
     def __init__(self, learning_rate=1e-4, l1_weight=5, save_path="trained_256_model.pth.tar"):
         self.trained_epoch = 0
         self.learning_rate = learning_rate
+        self.best_acc2 = 0.0
+        self.best_acc5 = 0.0
 
         try:
             self.G_model = Generator_256().cuda()
@@ -446,6 +468,8 @@ class GAN_256():
             self.trained_epoch = checkpoint['trained_epoch']
             self.loss_history = checkpoint['loss_history']
             self.acc_history = checkpoint['acc_history']
+            self.best_acc2 = checkpoint['best_acc2']
+            self.best_acc5 = checkpoint['best_acc5']
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
@@ -521,6 +545,10 @@ class GAN_256():
               (lossD, D_loss_real, D_loss_fake, lossG, lossG_GAN, lossG_L1, Dreal, Dfake, end-start))
 
         lossD_val, lossG_val, acc_2, acc_5 = self.validate(val_loader)
+        # if acc_2 > self.best_acc2 and acc_5 > self.best_acc5:
+        #     self.best_acc2 = acc_2
+        #     self.best_acc5 = acc_5
+        #     self.save()
 
         # update history
         loss_all = [lossD, D_loss_real, D_loss_fake, lossG, lossG_GAN, lossG_L1, lossD_val,
@@ -632,6 +660,8 @@ class GAN_256():
                     'D_optimizer_state_dict': self.D_optimizer.state_dict(),
                     'loss_history': self.loss_history,
                     'acc_history': self.acc_history,
+                    'best_acc2': self.best_acc2,
+                    'best_acc5': self.best_acc5,
                     'trained_epoch': self.trained_epoch}, self.save_path)
 
     def plot_loss(self):
@@ -667,6 +697,8 @@ class Unet_256():
     def __init__(self, learning_rate=1e-4, save_path="trained_256_UNet_model.pth.tar"):
         self.trained_epoch = 0
         self.learning_rate = learning_rate
+        self.best_acc2 = 0.0
+        self.best_acc5 = 0.0
 
         try:
             self.model = U_Net_network_256().cuda()
@@ -690,6 +722,8 @@ class Unet_256():
             self.loss_train_history = checkpoint['loss_train_history']
             self.loss_val_history = checkpoint['loss_val_history']
             self.acc_history = checkpoint['acc_history']
+            self.best_acc2 = checkpoint['best_acc2']
+            self.best_acc5 = checkpoint['best_acc5']
 
     def train_one_epoch(self, train_loader, val_loader, epoch):
         self.trained_epoch = epoch
@@ -717,6 +751,10 @@ class Unet_256():
         print('U-Net training loss: %.3f ' % (losses/cnt))
 
         loss_val, acc_2, acc_5 = self.validate(val_loader)
+        # if acc_2 > self.best_acc2 and acc_5 > self.best_acc5:
+        #     self.best_acc2 = acc_2
+        #     self.best_acc5 = acc_5
+        #     self.save()
 
         # update history
         self.loss_train_history.append(losses/cnt)
@@ -788,6 +826,8 @@ class Unet_256():
                     'loss_train_history': self.loss_train_history,
                     'loss_val_history': self.loss_val_history,
                     'acc_history': self.acc_history,
+                    'best_acc2': self.best_acc2,
+                    'best_acc5': self.best_acc5,
                     'trained_epoch': self.trained_epoch}, self.save_path)
 
     def plot_loss(self):
